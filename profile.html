@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мой профиль — КиноПоток</title>
+<link rel="stylesheet" href="css/style.css">
+<script>
+  (function(){
+    if (!localStorage.getItem('kinopotok_session')) location.replace('login.html');
+  })();
+</script>
+<style>
+  .profile-hero { display: flex; gap: 24px; align-items: center; padding: 30px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 24px; background-size: cover; background-position: center; position: relative; overflow: hidden; }
+  .profile-hero::before { content: ''; position: absolute; inset: 0; background: rgba(10,10,18,0.85); z-index: 0; }
+  .profile-hero > * { position: relative; z-index: 1; }
+  .profile-avatar-big { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--accent); object-fit: cover; }
+  
+  .main-tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+  .main-tab { padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #fff; border-radius: 10px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+  .main-tab.active { background: var(--accent); border-color: var(--accent); }
+  
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  
+  /* Топ 5 */
+  .top5-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; }
+  .top5-item { text-align: center; }
+  .top5-item img { width: 100%; border-radius: 10px; aspect-ratio: 2/3; object-fit: cover; }
+  .top5-item .num { font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 5px; }
+  
+  /* Квесты */
+  .quest-item { display: flex; gap: 15px; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); }
+  .quest-icon { font-size: 24px; }
+  .quest-info { flex: 1; }
+  .quest-title { font-weight: bold; font-size: 15px; }
+  .quest-desc { font-size: 12px; color: var(--muted); }
+  .quest-xp { font-weight: bold; color: var(--gold); }
+
+  /* Мои подборки */
+  .custom-collections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .custom-collection-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .custom-collection-card:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: var(--accent);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .create-card {
+    border: 2px dashed rgba(255,255,255,0.2);
+  }
+  .create-card:hover {
+    border: 2px dashed var(--accent);
+  }
+  .create-icon {
+    font-size: 50px;
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-weight: 300;
+    line-height: 1;
+  }
+  .create-text {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .collection-title {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 20px 15px 15px;
+    background: linear-gradient(0deg, rgba(10,10,18,0.95), transparent);
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+  }
+  
+  /* Кнопка удаления подборки */
+  .btn-delete-collection {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+  }
+  .custom-collection-card:hover .btn-delete-collection {
+    opacity: 1;
+  }
+  .btn-delete-collection:hover {
+    background: #e74c3c;
+    border-color: #e74c3c;
+    transform: scale(1.1);
+  }
+
+  .back-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); margin-bottom: 20px; cursor: pointer; font-weight: 600; transition: color 0.2s; }
+  .back-btn:hover { color: var(--accent); }
+
+  /* Модальное окно */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 3000; opacity: 0; visibility: hidden; transition: all 0.3s;
+  }
+  .modal-overlay.open { opacity: 1; visibility: visible; }
+  .modal-box {
+    background: #12121c; border: 1px solid var(--border);
+    border-radius: 20px; padding: 30px; width: 100%; max-width: 400px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+    transform: translateY(20px); transition: all 0.3s;
+  }
+  .modal-overlay.open .modal-box { transform: translateY(0); }
+  .modal-box h3 { margin-bottom: 20px; font-size: 20px; color: #fff; }
+  .modal-input {
+    width: 100%; padding: 14px; border-radius: 12px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: #fff; font-size: 16px; outline: none; margin-bottom: 20px;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* Выбор фильма */
+  .movie-selector { max-height: 400px; overflow-y: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding-right: 5px; }
+  .movie-selector::-webkit-scrollbar { width: 4px; }
+  .movie-selector::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+  .movie-sel-item { position: relative; cursor: pointer; border-radius: 8px; overflow: hidden; aspect-ratio: 2/3; transition: transform 0.2s; }
+  .movie-sel-item:hover { transform: scale(1.05); }
+  .movie-sel-item img { width: 100%; height: 100%; object-fit: cover; }
+  .movie-sel-item.selected { border: 3px solid var(--accent); }
+  .movie-sel-check { position: absolute; top: 5px; right: 5px; background: var(--accent); color: #000; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; opacity: 0; transition: opacity 0.2s; }
+  .movie-sel-item.selected .movie-sel-check { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="index.html" class="logo"><img src="images/logo.png" alt="КиноПоток"></a>
+  <nav class="nav">
+    <a href="index.html" class="nav-link">Главная</a>
+    <a href="movies.html" class="nav-link">Фильмы</a>
+    <a href="series.html" class="nav-link">Сериалы</a>
+    <a href="collections.html" class="nav-link">Подборки</a>
+  </nav>
+  <a href="profile-settings.html" class="btn btn-ghost" style="margin-left:auto;">⚙️ Настройки</a>
+</header>
+
+<div class="container" style="max-width:900px; margin-top:40px;">
+  <div class="profile-hero" id="profileHero">
+    <img src="https://i.pravatar.cc/200?img=12" class="profile-avatar-big" id="userAvatarBig">
+    <div>
+      <h1 id="userNameTitle" style="font-size:32px; font-weight:800;">Гость</h1>
+      <p>Уровень <b id="lvlValue">1</b> · <span id="xpText">0 XP</span></p>
+      <div class="xp-bar" style="max-width:400px; margin-top:12px;">
+        <div class="xp-fill" id="xpFill"></div>
+      </div>
+      <p style="margin-top:8px; font-size:12px; color:var(--muted)">До следующего уровня: <b id="xpLeft">0</b> XP</p>
+    </div>
+  </div>
+
+  <div class="stats" style="grid-template-columns:repeat(3,1fr); padding: 20px; margin-bottom:20px; background: rgba(255,255,255,0.03); border-radius: 20px;">
+    <div class="stat"><b id="statHours">0</b><span>часов</span></div>
+    <div class="stat"><b id="statMovies">0</b><span>фильмов</span></div>
+    <div class="stat"><b id="statSeries">0</b><span>сериалов</span></div>
+  </div>
+
+  <div class="main-tabs">
+    <button class="main-tab active" data-pane="pane-top">🏆 Мой Топ-5</button>
+    <button class="main-tab" data-pane="pane-collections">🗂 Мои подборки</button>
+    <button class="main-tab" data-pane="pane-quests">🎯 Квесты</button>
+    <button class="main-tab" data-pane="pane-fav">❤️ Избранное</button>
+  </div>
+
+  <div class="tab-pane active" id="pane-top">
+    <div class="top5-grid" id="top5Grid"></div>
+  </div>
+
+  <div class="tab-pane" id="pane-collections">
+    <!-- Список подборок -->
+    <div id="collectionsListView">
+      <div class="custom-collections-grid" id="customCollectionsGrid">
+        <!-- Сюда будут добавляться карточки -->
+      </div>
+    </div>
+
+    <!-- Внутренность подборки (скрыта по умолчанию) -->
+    <div id="collectionDetailView" style="display: none;">
+      <div class="back-btn" id="btnBackToCollections">← Назад к подборкам</div>
+      <h2 id="currentCollectionTitle" style="margin-bottom: 20px; color: var(--accent);"></h2>
+      
+      <div class="custom-collections-grid" id="collectionMoviesGrid">
+        <div class="custom-collection-card create-card" id="btnAddMovieToCollection">
+          <div class="create-icon">+</div>
+          <div class="create-text">Добавить фильм</div>
+        </div>
+        <!-- Сюда будут добавляться фильмы -->
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="pane-quests">
+    <div style="max-height: 500px; overflow-y: auto; background: rgba(255,255,255,0.02); border-radius: 15px; padding: 10px;" id="questList"></div>
+  </div>
+
+  <div class="tab-pane" id="pane-fav">
+    <div class="grid" id="favGrid"></div>
+  </div>
+</div>
+
+<!-- Модальное окно создания подборки -->
+<div class="modal-overlay" id="createCollectionModal">
+  <div class="modal-box">
+    <h3>Создать новую подборку</h3>
+    <input type="text" class="modal-input" id="newCollectionName" placeholder="Название подборки...">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelCollection">Отмена</button>
+      <button class="btn btn-primary" id="btnSaveCollection">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно выбора фильма -->
+<div class="modal-overlay" id="selectMovieModal">
+  <div class="modal-box" style="max-width: 600px;">
+    <h3>Выберите фильм</h3>
+    <div class="movie-selector" id="movieSelector"></div>
+    <div class="modal-actions" style="margin-top: 20px;">
+      <button class="btn btn-ghost" id="btnCancelMovieSelect">Отмена</button>
+      <button class="btn btn-primary" id="btnSaveMovieSelect">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/grid.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const user = Auth.currentUser();
+  if (!user) return;
+
+  document.getElementById('userNameTitle').textContent = user.name || 'Гость';
+  if (user.avatar) document.getElementById('userAvatarBig').src = user.avatar;
+  if (user.bgImage) document.getElementById('profileHero').style.backgroundImage = `url('${user.bgImage}')`;
+
+  setTimeout(() => {
+    if (typeof updateProfileUI === 'function') updateProfileUI();
+  }, 100);
+
+  // Переключение вкладок
+  document.querySelectorAll('.main-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.main-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.pane).classList.add('active');
+      // Если переключились на подборки, сбрасываем вид на список
+      if (btn.dataset.pane === 'pane-collections') {
+        document.getElementById('collectionDetailView').style.display = 'none';
+        document.getElementById('collectionsListView').style.display = 'block';
+      }
+    });
+  });
+
+  // ТОП-5
+  const top5Grid = document.getElementById('top5Grid');
+  if (user.top5 && user.top5.length > 0) {
+    top5Grid.innerHTML = user.top5.map((id, i) => {
+      const m = findById(id);
+      if (!m) return '';
+      return `<div class="top5-item"><div class="num">#${i + 1}</div><a href="title.html?id=${m.id}"><img src="${m.img}" alt=""></a></div>`;
+    }).join('');
+  } else {
+    top5Grid.innerHTML = '<p style="color:var(--muted)">Топ-5 пока пуст.</p>';
+  }
+
+  // КВЕСТЫ
+  const questList = document.getElementById('questList');
+  let quests = [];
+  for (let i = 1; i <= 100; i++) {
+    quests.push({
+      id: `q_${i}`,
+      icon: i % 3 === 0 ? '⏱' : (i % 2 === 0 ? '🎬' : '📺'),
+      title: i % 3 === 0 ? `Посмотреть ${i} часов кино` : (i % 2 === 0 ? `Посмотреть ${i} фильмов` : `Посмотреть ${i} серий`),
+      desc: `Накопительное достижение`,
+      xp: i * 20
+    });
+  }
+  const completed = user.completedQuests || [];
+  questList.innerHTML = quests.map(q => {
+    const isDone = completed.includes(q.id);
+    return `<div class="quest-item" style="opacity: ${isDone ? 0.5 : 1};"><div class="quest-icon">${q.icon}</div><div class="quest-info"><div class="quest-title">${q.title} ${isDone ? '✅' : ''}</div><div class="quest-desc">${q.desc}</div></div><div class="quest-xp">+${q.xp} XP</div></div>`;
+  }).join('');
+
+  // ИЗБРАННОЕ
+  const favs = JSON.parse(localStorage.getItem('favs') || '[]');
+  const favItems = favs.map(findById).filter(Boolean);
+  if (favItems.length) renderGrid('favGrid', favItems);
+  else document.getElementById('favGrid').innerHTML = '<p style="color:var(--muted)">Пока пусто. Добавьте фильмы в избранное.</p>';
+
+  // ================= МОИ ПОДБОРКИ =================
+  let userCollections = JSON.parse(localStorage.getItem('user_collections') || '[]');
+  let currentCollectionId = null;
+  
+  const grid = document.getElementById('customCollectionsGrid');
+  const collectionsListView = document.getElementById('collectionsListView');
+  const collectionDetailView = document.getElementById('collectionDetailView');
+  const collectionMoviesGrid = document.getElementById('collectionMoviesGrid');
+  const currentCollectionTitle = document.getElementById('currentCollectionTitle');
+  
+  const createModal = document.getElementById('createCollectionModal');
+  const selectModal = document.getElementById('selectMovieModal');
+  const movieSelector = document.getElementById('movieSelector');
+
+  // Сохранение изменений
+  function saveCollections() {
+    localStorage.setItem('user_collections', JSON.stringify(userCollections));
+  }
+
+  // Рендер списка подборок
+  function renderCollectionsList() {
+    grid.innerHTML = `
+      <div class="custom-collection-card create-card" id="btnCreateCollection">
+        <div class="create-icon">+</div>
+        <div class="create-text">Создать подборку</div>
+      </div>
+    `;
+
+    userCollections.forEach(col => {
+      const card = document.createElement('div');
+      card.className = 'custom-collection-card';
+      card.innerHTML = `
+        <button class="btn-delete-collection" title="Удалить подборку" data-id="${col.id}">🗑</button>
+        <div class="collection-title">${col.name}</div>
+      `;
+      
+      // Клик по подборке — открываем её
+      card.addEventListener('click', (e) => {
+        // Если кликнули на кнопку удаления, не открываем подборку
+        if (e.target.closest('.btn-delete-collection')) return;
+
+        currentCollectionId = col.id;
+        currentCollectionTitle.textContent = col.name;
+        collectionsListView.style.display = 'none';
+        collectionDetailView.style.display = 'block';
+        renderCollectionMovies();
+      });
+      
+      grid.appendChild(card);
+    });
+
+    // Обработчик удаления
+    grid.querySelectorAll('.btn-delete-collection').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const col = userCollections.find(c => c.id === id);
+        if (!col) return;
+
+        if (confirm(`Вы уверены, что хотите удалить подборку "${col.name}"?`)) {
+          userCollections = userCollections.filter(c => c.id !== id);
+          saveCollections();
+          renderCollectionsList();
+        }
+      });
+    });
+
+    document.getElementById('btnCreateCollection').addEventListener('click', () => {
+      document.getElementById('newCollectionName').value = '';
+      createModal.classList.add('open');
+      document.getElementById('newCollectionName').focus();
+    });
+  }
+
+  // Рендер фильмов внутри подборки
+  function renderCollectionMovies() {
+    const col = userCollections.find(c => c.id === currentCollectionId);
+    if (!col) return;
+
+    // Очищаем всё, кроме кнопки "+"
+    collectionMoviesGrid.innerHTML = `
+      <div class="custom-collection-card create-card" id="btnAddMovieToCollection">
+        <div class="create-icon">+</div>
+        <div class="create-text">Добавить фильм</div>
+      </div>
+    `;
+
+    col.movies.forEach(movieId => {
+      const m = findById(movieId);
+      if (!m) return;
+      
+      const card = document.createElement('div');
+      card.className = 'custom-collection-card';
+      card.style.padding = '0';
+      card.style.background = '#1a1a24';
+      
+      card.innerHTML = `
+        <a href="title.html?id=${m.id}" style="display:block; width:100%; height:100%; position:relative;">
+          <img src="${m.img}" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0;">
+          <div class="collection-title">${m.title}</div>
+        </a>
+      `;
+      collectionMoviesGrid.appendChild(card);
+    });
+
+    document.getElementById('btnAddMovieToCollection').addEventListener('click', () => {
+      openMovieSelector(col);
+    });
+  }
+
+  // Открытие модалки выбора фильма
+  function openMovieSelector(col) {
+    const sortedMovies = [...MOVIES].sort((a, b) => a.title.localeCompare(b.title));
+    
+    movieSelector.innerHTML = sortedMovies.map(m => {
+      const isSelected = col.movies.includes(m.id);
+      return `
+        <div class="movie-sel-item ${isSelected ? 'selected' : ''}" data-id="${m.id}">
+          <img src="${m.img}" alt="${m.title}">
+          <div class="movie-sel-check">✓</div>
+        </div>
+      `;
+    }).join('');
+
+    movieSelector.querySelectorAll('.movie-sel-item').forEach(item => {
+      item.addEventListener('click', () => {
+        item.classList.toggle('selected');
+      });
+    });
+
+    selectModal.classList.add('open');
+  }
+
+  // Сохранение выбранных фильмов
+  document.getElementById('btnSaveMovieSelect').addEventListener('click', () => {
+    const col = userCollections.find(c => c.id === currentCollectionId);
+    if (!col) return;
+
+    const selectedIds = [];
+    movieSelector.querySelectorAll('.movie-sel-item.selected').forEach(item => {
+      selectedIds.push(item.dataset.id);
+    });
+
+    col.movies = selectedIds;
+    saveCollections();
+    selectModal.classList.remove('open');
+    renderCollectionMovies();
+  });
+
+  // Кнопки "Назад"
+  document.getElementById('btnBackToCollections').addEventListener('click', () => {
+    collectionsListView.style.display = 'block';
+    collectionDetailView.style.display = 'none';
+    renderCollectionsList();
+  });
+
+  // Создание подборки
+  document.getElementById('btnSaveCollection').addEventListener('click', () => {
+    const name = document.getElementById('newCollectionName').value.trim();
+    if (!name) return alert('Введите название подборки');
+    
+    userCollections.push({ id: Date.now().toString(), name: name, movies: [] });
+    saveCollections();
+    createModal.classList.remove('open');
+    renderCollectionsList();
+  });
+
+  document.getElementById('btnCancelCollection').addEventListener('click', () => createModal.classList.remove('open'));
+  document.getElementById('btnCancelMovieSelect').addEventListener('click', () => selectModal.classList.remove('open'));
+
+  // Инициализация
+  renderCollectionsList();
+});
+</script>
+</body>
+</html>

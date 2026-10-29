@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Подборки — КиноПоток</title>
+<link rel="stylesheet" href="css/style.css">
+<script>
+  (function(){
+    if (!localStorage.getItem('kinopotok_session')) location.replace('login.html');
+  })();
+</script>
+</head>
+<body>
+
+<header class="header">
+  <a href="index.html" class="logo"><img src="images/logo.png" alt="КиноПоток"></a>
+  <button class="burger" id="burgerMenu">☰</button>
+
+  <nav class="nav" id="mainNav">
+    <a href="index.html" class="nav-link">Главная</a>
+    <a href="movies.html" class="nav-link">Фильмы</a>
+    <a href="series.html" class="nav-link">Сериалы</a>
+    <a href="movies.html?genre=Мультфильм" class="nav-link">Мультфильмы</a>
+    <a href="collections.html" class="nav-link active">Подборки</a>
+  </nav>
+
+  <input class="search" type="text" placeholder="Поиск...">
+
+  <a href="https://t.me/K1noPotok" target="_blank" class="tg-btn" title="Наш Telegram">
+    <svg viewBox="0 0 24 24" width="20" height="20">
+      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.87 4.326-2.96-.924c-.64-.203-.654-.64.135-.95l11.57-4.46c.535-.194 1.004.122.83.938z"/>
+    </svg>
+    <span>Telegram</span>
+  </a>
+
+  <div class="profile-widget" id="profileWidget">
+    <button class="profile-trigger" id="profileTrigger">
+      <img src="https://i.pravatar.cc/80?img=12" class="avatar">
+      <span class="level-pill">Lv 1</span>
+    </button>
+    <div class="profile-menu" id="profileMenu">
+      <div class="profile-header">
+        <img src="https://i.pravatar.cc/120?img=12" class="avatar-lg">
+        <div>
+          <div class="user-name">Гость</div>
+          <div class="user-sub">Новый пользователь</div>
+        </div>
+      </div>
+      <div class="xp-block">
+        <div class="xp-row">
+          <span>Уровень <b id="lvlValue">1</b></span>
+          <span id="xpText">0 / 1000 XP</span>
+        </div>
+        <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+        <div class="xp-hint">До следующего уровня: <b id="xpLeft">1000</b> XP</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="statHours">0</b><span>часов</span></div>
+        <div class="stat"><b id="statMovies">0</b><span>фильмов</span></div>
+        <div class="stat"><b id="statSeries">0</b><span>сериалов</span></div>
+      </div>
+      <div class="profile-tabs">
+        <button class="tab-btn active" data-tab="achievements">🏆</button>
+        <button class="tab-btn" data-tab="quests">🎯</button>
+      </div>
+      <div class="tab-content" id="tabContent"></div>
+
+      <a href="profile.html" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:12px;text-decoration:none;">👤 Мой профиль</a>
+      <a href="profile-settings.html" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px;text-decoration:none;">⚙️ Настройки</a>
+      <button id="logoutBtn" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px">🚪 Выйти</button>
+    </div>
+  </div>
+</header>
+
+<section class="container">
+  <h1 class="page-title">🗂 Подборки</h1>
+  <div class="collections-grid" id="collectionsGrid"></div>
+</section>
+
+<footer class="footer">
+  <div style="max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; align-items: center;">
+    <div style="font-size: 14px; font-weight: 500;">© 2025 КиноПоток. Все права защищены.</div>
+    <div style="font-size: 13px; color: #9a9aad;">
+      Служба поддержки:
+      <a href="mailto:kinopotok854@gmail.com" style="font-weight: 600;">kinopotok854@gmail.com</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Кнопка "Наверх" -->
+<button class="scroll-to-top" id="scrollToTop" title="Вернуться наверх">
+  <svg viewBox="0 0 24 24" width="24" height="24">
+    <path d="M12 4l-8 8h6v8h4v-8h6z" fill="currentColor"/>
+  </svg>
+</button>
+
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/dropdown.js"></script>
+<script src="js/grid.js"></script>
+<script src="js/search.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.getElementById('burgerMenu')?.addEventListener('click', () => {
+    document.getElementById('mainNav').classList.toggle('open');
+  });
+</script>
+</body>
+</html>

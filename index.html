@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>КиноПоток — смотри онлайн</title>
+<link rel="stylesheet" href="css/style.css">
+<script>
+  (function(){
+    if (!localStorage.getItem('kinopotok_session')) location.replace('login.html');
+  })();
+</script>
+<style>
+  /* === СТИЛИ БЛОКА НОВОСТЕЙ === */
+  .news-section {
+    margin-top: 60px;
+    margin-bottom: 60px;
+  }
+  .news-title-main {
+    text-align: center;
+    font-size: 32px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  }
+  .news-accordion {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .news-item {
+    background: rgba(18, 18, 28, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+  .news-item:hover {
+    border-color: var(--accent);
+    box-shadow: 0 5px 20px rgba(245, 158, 11, 0.15);
+  }
+  .news-header {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 20px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    text-align: left;
+    color: #ffffff;
+    font-family: inherit;
+  }
+  .news-date {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-right: 15px;
+    white-space: nowrap;
+  }
+  .news-heading {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+    flex: 1;
+  }
+  .news-icon {
+    font-size: 24px;
+    color: var(--accent);
+    margin-left: 15px;
+    transition: transform 0.3s ease;
+    font-weight: 300;
+    line-height: 1;
+  }
+  .news-item.active {
+    border-color: var(--accent);
+    background: rgba(18, 18, 28, 0.98);
+  }
+  .news-item.active .news-icon {
+    transform: rotate(45deg); /* Плюс превращается в крестик */
+  }
+  .news-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding 0.4s ease;
+    padding: 0 25px;
+    color: #d1d1e0;
+    font-size: 15px;
+    line-height: 1.6;
+    border-top: 1px solid transparent;
+  }
+  .news-item.active .news-content {
+    max-height: 2000px;
+    padding: 0 25px 25px 25px;
+    border-top-color: rgba(255,255,255,0.05);
+  }
+  .news-content p { margin-top: 15px; margin-bottom: 12px; }
+  .news-content strong { color: var(--accent); }
+  
+  @media (max-width: 768px) {
+    .news-header { flex-direction: column; align-items: flex-start; gap: 8px; padding: 15px; }
+    .news-date { margin-right: 0; }
+    .news-heading { font-size: 16px; padding-right: 30px; }
+    .news-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); margin-left: 0; }
+    .news-item.active .news-icon { transform: translateY(-50%) rotate(45deg); }
+    .news-content { padding: 0 15px; }
+    .news-item.active .news-content { padding: 0 15px 15px 15px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="index.html" class="logo"><img src="images/logo.png" alt="КиноПоток"></a>
+  <button class="burger" id="burgerMenu">☰</button>
+
+  <nav class="nav" id="mainNav">
+    <a href="index.html" class="nav-link active">Главная</a>
+    <a href="movies.html" class="nav-link">Фильмы</a>
+    <a href="series.html" class="nav-link">Сериалы</a>
+    <a href="movies.html?genre=Мультфильм" class="nav-link">Мультфильмы</a>
+    <a href="collections.html" class="nav-link">Подборки</a>
+  </nav>
+
+  <input class="search" type="text" placeholder="Поиск фильмов...">
+
+  <a href="https://t.me/K1noPotok" target="_blank" class="tg-btn" title="Наш Telegram">
+    <svg viewBox="0 0 24 24" width="20" height="20">
+      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.87 4.326-2.96-.924c-.64-.203-.654-.64.135-.95l11.57-4.46c.535-.194 1.004.122.83.938z"/>
+    </svg>
+    <span>Telegram</span>
+  </a>
+
+  <div class="profile-widget" id="profileWidget">
+    <button class="profile-trigger" id="profileTrigger">
+      <img src="https://i.pravatar.cc/80?img=12" alt="avatar" class="avatar">
+      <span class="level-pill">Lv 1</span>
+    </button>
+    <div class="profile-menu" id="profileMenu">
+      <div class="profile-header">
+        <img src="https://i.pravatar.cc/120?img=12" alt="avatar" class="avatar-lg">
+        <div>
+          <div class="user-name">Гость</div>
+          <div class="user-sub">Новый пользователь</div>
+        </div>
+      </div>
+      <div class="xp-block">
+        <div class="xp-row">
+          <span>Уровень <b id="lvlValue">1</b></span>
+          <span id="xpText">0 / 1000 XP</span>
+        </div>
+        <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+        <div class="xp-hint">До следующего уровня: <b id="xpLeft">1000</b> XP</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="statHours">0</b><span>часов</span></div>
+        <div class="stat"><b id="statMovies">0</b><span>фильмов</span></div>
+        <div class="stat"><b id="statSeries">0</b><span>сериалов</span></div>
+      </div>
+      <div class="profile-tabs">
+        <button class="tab-btn active" data-tab="achievements">🏆 Достижения</button>
+        <button class="tab-btn" data-tab="quests">🎯 Квесты</button>
+      </div>
+      <div class="tab-content" id="tabContent"></div>
+
+      <a href="profile.html" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:12px;text-decoration:none;">👤 Мой профиль</a>
+      <a href="profile-settings.html" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px;text-decoration:none;">⚙️ Настройки</a>
+      <button id="logoutBtn" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px">🚪 Выйти</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero" id="hero">
+  <div class="hero-dots" id="heroDots"></div>
+  <button class="hero-arrow left" id="heroPrev">‹</button>
+  <button class="hero-arrow right" id="heroNext">›</button>
+</section>
+
+<section class="container">
+  <h2 class="section-title">Популярное</h2>
+  <div class="grid" id="popularGrid"></div>
+</section>
+
+<!-- === БЛОК НОВОСТЕЙ === -->
+<section class="container news-section">
+  <h2 class="news-title-main">Новости</h2>
+  
+  <div class="news-accordion">
+    
+    <!-- Новость 1 -->
+    <div class="news-item">
+      <button class="news-header" onclick="toggleNews(this)">
+        <span class="news-date">23 октября</span>
+        <span class="news-heading">В моих фильмах свет лучше! Что Тарантино и Финчер рассказали друг о друге</span>
+        <span class="news-icon">+</span>
+      </button>
+      <div class="news-content">
+        <p>В декабрьском выпуске журнала Empire вышло большое интервью с создателями «Новых похождений Клиффа Бута» — режиссером Дэвидом Финчером и сценаристом Квентином Тарантино.</p>
+        <p><strong>О сценарии:</strong> Тарантино описывает сценарий как «вульгарный», «запоминающийся» и «жестокий». Первый драфт насчитывал 230 страниц. «По сути, это было два фильма», — отмечает Дэвид Финчер. Режиссер вырезал 60 страниц, которые «многое рассказывали об эпохе». Поначалу Финчер даже рассматривал возможность превратить сценарий в сериал. В итоге получился «длинный фильм» — около двух часов двадцати минут.</p>
+        <p><strong>О работе друг с другом:</strong> Инициатором проекта стал Брэд Питт, который очень хотел снова сыграть Клиффа Бута. Именно он предложил Финчеру прочитать сценарий. Тарантино обрадовался, что режиссер калибра Финчера согласился потратить полтора года жизни на его материал.</p>
+        <p><strong>О Скотте Каане:</strong> Актер сыграл мутную телезвезду Чарли Питерса. Тарантино не может представить себе фильм без Каана, а Финчер предложил актеру роль без проб.</p>
+        <p><strong>О женщинах:</strong> Финчер уважает Тарантино за то, что его героини «не расплачиваются за свою сексуальность и потребности». Карла Гуджино и Элизабет Дебики — «совершенно настоящие женщины».</p>
+      </div>
+    </div>
+
+    <!-- Новость 2 -->
+    <div class="news-item">
+      <button class="news-header" onclick="toggleNews(this)">
+        <span class="news-date">26 октября</span>
+        <span class="news-heading">Netflix увольняет 1000 сотрудников, включая топ-менеджеров</span>
+        <span class="news-icon">+</span>
+      </button>
+      <div class="news-content">
+        <p>В октябре 2026 года зарубежную индустрию всколыхнула новость: Netflix проведет крупнейшее за всю историю сокращение штата, и речь не только о сотрудниках среднего звена, но и о топ-менеджерах контентного департамента. Всего планируется сократить 1000 человек, или 6% всего штата.</p>
+        <p><strong>Что сейчас с компанией:</strong> В третьем квартале 2026 года чистая прибыль компании превысила ожидания аналитиков — 3,66 млрд долларов. Однако стриминг скорректировал прогноз на весь 2026 год, и теперь выручка ожидается на уровне 51,1 млрд долларов — по нижней границе собственных планов.</p>
+        <p><strong>Куда пропала вовлеченность:</strong> В июле Netflix опубликовала отчет о просмотрах контента за первую половину 2026 года, в котором указано: общее количество часов просмотра на платформе по всему миру выросло на 2% за год, при этом в среднем один пользователь стал смотреть меньше контента.</p>
+        <p><strong>В поисках развития:</strong> В этом году у Netflix было несколько успешных проектов, но, по мнению Сарандоса, компании «нужны настоящие хиты, которые станут популярными во всем мире».</p>
+      </div>
+    </div>
+
+    <!-- Новость 3 -->
+    <div class="news-item">
+      <button class="news-header" onclick="toggleNews(this)">
+        <span class="news-date">16 октября</span>
+        <span class="news-heading">Стивен Содерберг закончит съемки вместо Мэтта Ривза: что мы знаем о «Бэтмене 2»</span>
+        <span class="news-icon">+</span>
+      </button>
+      <div class="news-content">
+        <p>После многочисленных задержек в Англии начались съемки второй части «Бэтмена» — продолжения супергеройского неонуара Мэтта Ривза, которое фанаты ждут с 2022 года.</p>
+        <p><strong>Что известно о сюжете:</strong> Действие второго фильма должно начаться зимой, спустя несколько месяцев после событий первой части и через несколько недель после финала телевизионного спин-оффа «Пингвин». Новое расследование Бэтмена покажет, насколько глубоко во все сферы городского общества проникла коррупция.</p>
+        <p><strong>Как поможет Стивен Содерберг:</strong> 5 октября 2026 года студия объявила, что съемки временно приостановлены из-за семейных обстоятельств Мэтта Ривза. Спустя 10 дней стало известно, что Стивен Содерберг доснимет оставшуюся часть фильма, который отснят на две трети.</p>
+        <p><strong>Кто снимается в фильме:</strong> Роберт Паттинсон вновь примеряет на себя образ Крестоносца в плаще. К своим ролям также вернутся: Джеффри Райт, Энди Серкис, Колин Фаррелл. Актерский состав сиквела пополнили Себастьян Стэн, Скарлетт Йоханссон и другие.</p>
+        <p><strong>Когда выйдет «Бэтмен 2»:</strong> Релиз запланирован на 18 февраля 2028 года, спустя шесть лет после выхода первого «Бэтмена».</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  <div style="max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; align-items: center;">
+    <div style="font-size: 14px; font-weight: 500;">© 2025 КиноПоток. Все права защищены.</div>
+    <div style="font-size: 13px; color: #9a9aad;">
+      Служба поддержки:
+      <a href="mailto:kinopotok854@gmail.com" style="font-weight: 600;">kinopotok854@gmail.com</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Кнопка "Наверх" -->
+<button class="scroll-to-top" id="scrollToTop" title="Вернуться наверх">
+  <svg viewBox="0 0 24 24" width="24" height="24">
+    <path d="M12 4l-8 8h6v8h4v-8h6z" fill="currentColor"/>
+  </svg>
+</button>
+
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/dropdown.js"></script>
+<script src="js/slider.js"></script>
+<script src="js/grid.js"></script>
+<script src="js/search.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/app.js"></script>
+<script>
+  document.getElementById('burgerMenu')?.addEventListener('click', () => {
+    document.getElementById('mainNav').classList.toggle('open');
+  });
+
+  // Функция для открытия/закрытия аккордеона новостей
+  function toggleNews(button) {
+    const item = button.parentElement;
+    const isActive = item.classList.contains('active');
+
+    // Закрываем все остальные вкладки
+    document.querySelectorAll('.news-item').forEach(el => {
+      el.classList.remove('active');
+    });
+
+    // Если текущая была закрыта — открываем её
+    if (!isActive) {
+      item.classList.add('active');
+    }
+  }
+</script>
+</body>
+</html>
